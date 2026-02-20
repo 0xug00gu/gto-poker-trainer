@@ -1,48 +1,80 @@
 'use client';
 
-import { cardDisplayName, SUIT_COLORS } from '../../lib/deck.js';
+import * as Cards from '@letele/playing-cards';
 
 /**
- * PlayingCard — 포커 카드 컴포넌트
- * @param {string} card - 'As', 'Kh' 등. null이면 뒷면 표시
- * @param {boolean} faceDown - true면 뒷면 표시
+ * 우리 카드 포맷 → @letele/playing-cards 컴포넌트 이름 변환
+ * 우리 형식: 'As'(Ace of Spades), 'Kh'(King of Hearts), 'Td'(Ten of Diamonds)
+ * 라이브러리: Sa, Sk, D10 등
+ */
+function getCardComponentName(card) {
+  const SUIT_MAP = { s: 'S', h: 'H', d: 'D', c: 'C' };
+  const RANK_MAP = {
+    A: 'a', K: 'k', Q: 'q', J: 'j', T: '10',
+    '9': '9', '8': '8', '7': '7', '6': '6',
+    '5': '5', '4': '4', '3': '3', '2': '2',
+  };
+  const suit = SUIT_MAP[card[1]];
+  const rank = RANK_MAP[card[0]];
+  if (!suit || !rank) return null;
+  return suit + rank; // e.g., Sa, Hk, D10, C9
+}
+
+const SIZE_STYLES = {
+  sm: { width: 36, height: 50 },
+  md: { width: 52, height: 73 },
+  lg: { width: 72, height: 101 },
+};
+
+/**
+ * PlayingCard — 포커 카드 컴포넌트 (@letele/playing-cards 사용)
+ * @param {string|null} card - 'As', 'Kh' 등. null이면 뒷면
+ * @param {boolean} faceDown - true면 뒷면
  * @param {'sm'|'md'|'lg'} size
  */
 export default function PlayingCard({ card, faceDown = false, size = 'md' }) {
-  const sizeClasses = {
-    sm: 'w-8 h-11 text-xs',
-    md: 'w-12 h-16 text-sm',
-    lg: 'w-16 h-22 text-base',
+  const { width, height } = SIZE_STYLES[size] ?? SIZE_STYLES.md;
+
+  const style = {
+    width,
+    height,
+    flexShrink: 0,
+    borderRadius: 4,
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   };
 
+  // 뒷면
   if (!card || faceDown) {
+    const Back = Cards.B1;
     return (
-      <div
-        className={`${sizeClasses[size]} rounded-md flex items-center justify-center select-none`}
-        style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0f2042 100%)', border: '1px solid #2d5a8e', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
-        aria-label="카드 뒷면"
-      >
-        <div className="text-blue-300 opacity-40 text-lg font-bold">♦</div>
+      <div style={style} aria-label="카드 뒷면">
+        <Back width={width} height={height} />
       </div>
     );
   }
 
-  const { rank, suit } = cardDisplayName(card);
-  const isRed = card[1] === 'h' || card[1] === 'd';
+  const componentName = getCardComponentName(card);
+  const CardSvg = componentName ? Cards[componentName] : null;
+
+  // 매핑 실패 시 폴백
+  if (!CardSvg) {
+    return (
+      <div
+        style={{ ...style, background: '#fff', border: '1px solid #ddd' }}
+        aria-label={card}
+      >
+        <span style={{ fontSize: 10, color: '#333' }}>{card}</span>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={`${sizeClasses[size]} rounded-md flex flex-col justify-between p-1 select-none`}
-      style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.4)' }}
-      aria-label={`${rank}${suit}`}
-    >
-      <div className={`font-bold leading-none ${isRed ? 'text-red-600' : 'text-gray-900'}`}>
-        <div className="text-[10px] leading-tight">{rank}</div>
-        <div className="text-[10px] leading-tight">{suit}</div>
-      </div>
-      <div className={`text-center font-bold ${isRed ? 'text-red-600' : 'text-gray-900'} ${size === 'lg' ? 'text-lg' : 'text-sm'}`}>
-        {suit}
-      </div>
+    <div style={style} aria-label={card}>
+      <CardSvg width={width} height={height} />
     </div>
   );
 }

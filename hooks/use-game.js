@@ -72,7 +72,7 @@ export function useGame() {
       return;
     }
     if (savedHandRef.current) return;
-    if (!state.handId || state.handHistory.length === 0) return;
+    if (!state.handId) return;
 
     savedHandRef.current = true;
     try {
@@ -108,6 +108,6 @@ export function useGame() {
     startHand,
     playerAction,
     availableActions,
-    reviewUrl: state.handId ? `/review/${state.handId}` : null,
+    reviewUrl: state.phase === 'showdown' && state.handId ? `/review/${state.handId}` : null,
   };
 }
