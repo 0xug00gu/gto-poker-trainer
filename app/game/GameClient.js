@@ -8,7 +8,7 @@ import PokerTable from '../../components/game/PokerTable.js';
  * server component(page.js)에서 분리하여 'use client' 경계 명확화
  */
 export default function GameClient() {
-  const { state, startHand, playerAction, availableActions } = useGame();
+  const { state, startHand, playerAction, availableActions, reviewUrl } = useGame();
 
   return (
     <PokerTable
@@ -16,6 +16,7 @@ export default function GameClient() {
       availableActions={availableActions}
       onAction={playerAction}
       onStartHand={startHand}
+      reviewUrl={reviewUrl}
     />
   );
 }

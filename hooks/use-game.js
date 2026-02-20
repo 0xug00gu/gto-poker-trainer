@@ -17,6 +17,7 @@ const BOT_ACTION_DELAY = 600; // ms
 export function useGame() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState);
   const botTimerRef = useRef(null);
+  const savedHandRef = useRef(false);
 
   const clearBotTimer = () => {
     if (botTimerRef.current) {
@@ -64,6 +65,27 @@ export function useGame() {
     return clearBotTimer;
   }, [state.actionIndex, state.phase]);
 
+  // 쇼다운 시 localStorage에 핸드 히스토리 저장
+  useEffect(() => {
+    if (state.phase !== 'showdown') {
+      savedHandRef.current = false;
+      return;
+    }
+    if (savedHandRef.current) return;
+    if (!state.handId || state.handHistory.length === 0) return;
+
+    savedHandRef.current = true;
+    try {
+      localStorage.setItem(`hand_${state.handId}`, JSON.stringify(state.handHistory));
+      // 최근 핸드 ID 목록 유지 (최대 20개)
+      const recent = JSON.parse(localStorage.getItem('recent_hands') ?? '[]');
+      const updated = [state.handId, ...recent.filter((id) => id !== state.handId)].slice(0, 20);
+      localStorage.setItem('recent_hands', JSON.stringify(updated));
+    } catch (_) {
+      // localStorage 쓰기 실패 무시
+    }
+  }, [state.phase, state.handId]);
+
   const startHand = useCallback(() => {
     clearBotTimer();
     dispatch({ type: 'START_HAND' });
@@ -86,5 +108,6 @@ export function useGame() {
     startHand,
     playerAction,
     availableActions,
+    reviewUrl: state.handId ? `/review/${state.handId}` : null,
   };
 }
